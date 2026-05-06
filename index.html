@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Aura Support</title>
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700&display=swap">
+<style>
+  :root {
+    --paper:    #F5F1EA;
+    --paper-2:  #EBE5D8;
+    --paper-3:  #FFFCF7;
+    --ink:      #16140F;
+    --ink-2:    #3A3730;
+    --ink-3:    #807A72;
+    --rule:     rgba(22,20,15,0.08);
+    --rule-2:   rgba(22,20,15,0.14);
+    --teal:     #00A88A;
+    --teal-ink: #006B57;
+    --teal-tint:#E1ECE7;
+    --gold:     #B69770;
+    --app-height: 100vh;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  body {
+    font-family: 'General Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+  ::selection { background: var(--ink); color: var(--paper); }
+
+  /* Subtle paper grain */
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(rgba(22,20,15,0.025) 1px, transparent 1px),
+      radial-gradient(rgba(22,20,15,0.018) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+  }
+
+  .header, .chat-window, .footer-container { position: relative; z-index: 1; }
+
+  .header {
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 28px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 50;
+    padding-top: env(safe-area-inset-top);
+    padding-left: max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+    box-sizing: content-box;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .brand-mark { display: flex; flex-direction: column; gap: 5px; }
+  .brand-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .brand-name::after {
+    content: '.';
+    color: var(--gold);
+    margin-left: 1px;
+  }
+  .brand-sub {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--ink-3);
+    display: flex; align-items: center; gap: 7px; line-height: 1;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+  }
+  .header-actions { display: flex; align-items: center; gap: 4px; }
+  .icon-btn {
+    background: none; border: none; color: var(--ink-3); cursor: pointer;
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--ink); background: rgba(22,20,15,0.04); }
+
+  .chat-window {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-2) transparent;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+  .chat-window::-webkit-scrollbar { width: 4px; }
+  .chat-window::-webkit-scrollbar-track { background: transparent; }
+  .chat-window::-webkit-scrollbar-thumb { background: var(--rule-2); border-radius: 2px; }
+
+  .message-wrapper {
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.4s ease-out both;
+    width: 100%;
+    max-width: 100%;
+  }
+  .message-wrapper.user { align-items: flex-end; }
+  .message-wrapper.bot { align-items: flex-start; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .bot-label {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bot-label::before {
+    content: ''; display: block;
+    width: 18px; height: 1px;
+    background: var(--rule-2);
+  }
+
+  .message {
+    padding: 14px 18px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    max-width: 78%;
+    position: relative;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    letter-spacing: -0.005em;
+    border-radius: 4px;
+  }
+  .message.user {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px 4px 0 4px;
+    font-weight: 400;
+  }
+  .message.bot {
+    background: var(--paper-3);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 0 4px 4px 4px;
+    font-weight: 400;
+  }
+  .message.bot strong { font-weight: 600; color: var(--ink); }
+  .message.bot em { font-style: italic; color: var(--ink-2); }
+  .message.bot ul,
+  .message.bot ol { padding-left: 18px; margin: 8px 0; }
+  .message.bot li { margin: 4px 0; color: var(--ink-2); }
+  .message.bot a {
+    color: var(--teal-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    word-break: break-all;
+  }
+  .message.bot a:hover { color: var(--ink); }
+  .message.bot code {
+    background: var(--paper-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'General Sans', monospace;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .message.bot p { margin-bottom: 8px; }
+  .message.bot p:last-child { margin-bottom: 0; }
+  .message.bot h3 {
+    font-size: 13.5px; font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 12px 0 6px 0;
+    color: var(--ink);
+  }
+  .message-time {
+    font-size: 11px; font-weight: 500;
+    color: var(--ink-3);
+    margin-top: 6px;
+    letter-spacing: -0.005em;
+  }
+
+  /* Product card — paper-3 surface with hairline */
+  .product-card {
+    margin-top: 14px;
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 340px;
+    width: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow:
+      0 1px 1px rgba(22,20,15,0.04),
+      0 4px 8px rgba(22,20,15,0.04);
+  }
+  .product-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 1px rgba(22,20,15,0.04),
+      0 8px 16px rgba(22,20,15,0.06),
+      0 24px 48px rgba(22,20,15,0.08);
+  }
+  .product-card-img {
+    width: 100%; height: 144px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--paper-2);
+    position: relative; padding: 18px 22px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .product-card-img img { max-width: 85%; max-height: 110px; object-fit: contain; display: block; }
+  .product-card-placeholder {
+    width: 64px; height: 64px;
+    border: 1px solid var(--rule-2);
+    background: var(--paper-3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    font-size: 22px; font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+  .product-card-body { padding: 18px 20px 18px; }
+  .product-card-name {
+    font-size: 16px; font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .product-card-subtitle {
+    font-size: 12.5px; font-weight: 500;
+    color: var(--ink-3);
+    margin-bottom: 14px;
+    letter-spacing: -0.005em;
+  }
+  .product-card-price-row {
+    display: flex; align-items: baseline; justify-content: flex-end;
+    margin-bottom: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+  .product-card-price {
+    font-size: 17px; font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .product-card-btn {
+    display: block;
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 13px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.15s ease;
+    font-family: 'General Sans', sans-serif;
+  }
+  .product-card-btn:hover { background: #000; transform: translateY(-1px); }
+
+  #typing .message.bot { display: flex; gap: 5px; padding: 16px 18px; align-items: center; }
+  .dot { width: 5px; height: 5px; background: var(--ink-3); border-radius: 50%; animation: pulseDot 1.4s infinite ease-in-out; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulseDot {
+    0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  .footer-container {
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    padding: 18px 28px 26px;
+    flex-shrink: 0;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+    padding-left: max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+  }
+  .quick-replies {
+    display: flex; gap: 8px; margin-bottom: 14px;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .quick-replies::-webkit-scrollbar { display: none; }
+  .qr-btn {
+    background: transparent;
+    border: 1px solid var(--rule-2);
+    color: var(--ink-2);
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'General Sans', sans-serif;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .qr-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: rgba(22,20,15,0.03);
+  }
+
+  .input-wrapper {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--paper-3);
+    border: 1px solid var(--rule-2);
+    border-radius: 4px;
+    padding: 4px 4px 4px 18px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .input-wrapper:focus-within {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(22,20,15,0.06);
+  }
+  .input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 15.5px;
+    font-weight: 400;
+    color: var(--ink);
+    font-family: 'General Sans', sans-serif;
+    letter-spacing: -0.005em;
+    padding: 11px 0;
+    min-width: 0;
+    width: 100%;
+  }
+  .input-wrapper input::placeholder { color: var(--ink-3); }
+
+  .send-btn-wrapper { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+  .send-btn {
+    background: var(--ink);
+    border: none; width: 40px; height: 40px;
+    border-radius: 4px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s ease, transform 0.15s ease;
+    flex-shrink: 0; position: relative; z-index: 2;
+  }
+  .send-btn:hover { background: #000; }
+  .send-btn:active { transform: scale(0.96); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .wave-ring {
+    position: absolute; top: 50%; left: 50%; width: 40px; height: 40px;
+    border: 1px solid rgba(22,20,15,0); border-radius: 4px;
+    transform: translate(-50%, -50%) scale(1); pointer-events: none; z-index: 1;
+  }
+  .send-btn-wrapper.rippling .wave-ring { animation: waveExpand 0.7s ease-out forwards; }
+  .send-btn-wrapper.rippling .wave-ring:nth-child(2) { animation-delay: 0.1s; }
+  .send-btn-wrapper.rippling .wave-ring:nth-child(3) { animation-delay: 0.2s; }
+  @keyframes waveExpand {
+    0% { transform: translate(-50%, -50%) scale(1); border-color: rgba(22,20,15,0.4); }
+    100% { transform: translate(-50%, -50%) scale(2.6); border-color: rgba(22,20,15,0); }
+  }
+
+  .powered-by {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--ink-3);
+    margin-top: 14px;
+  }
+  .powered-by a {
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: color 0.25s ease;
+    position: relative;
+  }
+  .powered-by a::after {
+    content: ''; position: absolute; bottom: -2px; left: 0;
+    width: 0; height: 1px; background: var(--ink);
+    transition: width 0.3s ease;
+  }
+  .powered-by a:hover { color: var(--ink); }
+  .powered-by a:hover::after { width: 100%; }
+
+  .lang-wrapper { position: relative; z-index: 100; }
+  .lang-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper-3);
+    border: 1px solid var(--rule-2);
+    border-radius: 4px;
+    overflow: hidden; min-width: 160px;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: all 0.2s ease; z-index: 200;
+    box-shadow:
+      0 4px 8px rgba(22,20,15,0.04),
+      0 16px 32px rgba(22,20,15,0.08);
+  }
+  .lang-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+  .lang-option {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 11px 16px; background: none; border: none;
+    color: var(--ink-2);
+    font-family: 'General Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer; transition: all 0.15s ease; text-align: left;
+  }
+  .lang-option:hover { background: var(--paper-2); color: var(--ink); }
+  .lang-option.active { color: var(--ink); }
+  .lang-option .lang-flag { font-size: 12px; line-height: 1; font-weight: 600; color: var(--ink-3); }
+  .lang-option.active .lang-flag { color: var(--ink); }
+  .lang-option .lang-check { margin-left: auto; opacity: 0; font-size: 11px; color: var(--teal); }
+  .lang-option.active .lang-check { opacity: 1; }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .header {
+      padding: 0 18px;
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+      height: 60px;
+    }
+    .brand-name { font-size: 19px; }
+    .chat-window { padding: 22px 18px; gap: 18px; }
+    .footer-container {
+      padding: 14px 18px 18px;
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+    }
+    .message { max-width: 88%; padding: 12px 14px; font-size: 14px; }
+    .product-card { max-width: 100%; }
+    .input-wrapper { padding: 4px 4px 4px 14px; }
+    .qr-btn { padding: 8px 12px; }
+    .powered-by { margin-top: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="header">
+  <div class="header-left">
+    <div class="brand-mark">
+      <div class="brand-name">Aura</div>
+      <div class="brand-sub">
+        <span class="status-dot"></span>
+        Concierge
+      </div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="lang-wrapper">
+      <button class="icon-btn" id="lang-btn" title="Language">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <div class="lang-dropdown" id="lang-dropdown">
+        <button class="lang-option active" data-lang="en"
+          data-welcome="Welcome to Aura. I can help you find the right product, set yours up, troubleshoot an issue, or answer anything about the brand. What can I help you with?"
+          data-placeholder="Ask anything about Aura...">
+          <span class="lang-flag">EN</span> English
+          <span class="lang-check">&#10003;</span>
+        </button>
+        <button class="lang-option" data-lang="fr"
+          data-welcome="Bienvenue chez Aura. Je peux vous aider à choisir un produit, le configurer, résoudre un problème ou répondre à toute question sur la marque. Comment puis-je vous aider ?"
+          data-placeholder="Posez votre question sur Aura...">
+          <span class="lang-flag">FR</span> Français
+          <span class="lang-check">&#10003;</span>
+        </button>
+        <button class="lang-option" data-lang="es"
+          data-welcome="Bienvenido a Aura. Puedo ayudarte a elegir el producto adecuado, configurarlo, resolver un problema o responder cualquier pregunta sobre la marca. ¿En qué puedo ayudarte?"
+          data-placeholder="Pregunta lo que quieras sobre Aura...">
+          <span class="lang-flag">ES</span> Español
+          <span class="lang-check">&#10003;</span>
+        </button>
+        <button class="lang-option" data-lang="zh"
+          data-welcome="歡迎來到 Aura。我可以幫您挑選合適的產品、設定您的裝置、排除問題，或回答任何關於品牌的問題。請問有什麼需要幫助的嗎？"
+          data-placeholder="詢問任何關於 Aura 的問題...">
+          <span class="lang-flag">中</span> 中文
+          <span class="lang-check">&#10003;</span>
+        </button>
+        <button class="lang-option" data-lang="ja"
+          data-welcome="Auraへようこそ。製品選び、セットアップ、トラブル対応、ブランドに関するご質問など、何でもお手伝いします。"
+          data-placeholder="Auraについて何でもお聞きください...">
+          <span class="lang-flag">JP</span> 日本語
+          <span class="lang-check">&#10003;</span>
+        </button>
+        <button class="lang-option" data-lang="ko"
+          data-welcome="Aura에 오신 것을 환영합니다. 제품 선택, 설정, 문제 해결, 브랜드에 대한 궁금증 등 무엇이든 도와드리겠습니다."
+          data-placeholder="Aura에 대해 무엇이든 물어보세요...">
+          <span class="lang-flag">KR</span> 한국어
+          <span class="lang-check">&#10003;</span>
+        </button>
+      </div>
+    </div>
+    <button class="icon-btn" id="restart-btn" title="New conversation">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
+  </div>
+</div>
+<div class="chat-window" id="chat"></div>
+<div class="footer-container">
+  <div class="quick-replies" id="quick-replies"></div>
+  <div class="input-wrapper">
+    <input type="text" id="input" placeholder="Ask anything about Aura..." autocomplete="off" autocapitalize="sentences" autocorrect="on">
+    <div class="send-btn-wrapper" id="send-wrapper">
+      <div class="wave-ring"></div>
+      <div class="wave-ring"></div>
+      <div class="wave-ring"></div>
+      <button class="send-btn" id="send-btn" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="11" y="4" width="2" height="16" rx="1" fill="#F5F1EA"/>
+          <rect x="7" y="7" width="2" height="10" rx="1" fill="#F5F1EA"/>
+          <rect x="3" y="9" width="2" height="6" rx="1" fill="#F5F1EA"/>
+          <rect x="15" y="7" width="2" height="10" rx="1" fill="#F5F1EA"/>
+          <rect x="19" y="9" width="2" height="6" rx="1" fill="#F5F1EA"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="powered-by">Powered by <a href="https://squ-ai.vercel.app/" target="_blank" rel="noopener">SQU</a></div>
+</div>
+<script>
+const SUPABASE_URL = 'https://sygsovgnxlrsdqzwhdyc.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_EVCnH60x4JDU1Qlk5uZqBw_i3fmjTan';
+
+const productNameToId = {
+  'Aura Speaker Ultimate': 'AURA-SU',
+  'Aura Speaker Pro':      'AURA-SP',
+  'Aura Go':                'AURA-GO',
+  'Aura Gen II':            'AURA-G2',
+  'Aura Bar':               'AURA-BAR',
+  'Aura Cocoon':            'AURA-COCOON',
+  'Aura Stand':             'AURA-STAND',
+  'Aura Wall Mount':        'AURA-MOUNT',
+  'Aura Charging Dock':     'AURA-DOCK',
+  'Aura Arch':              'AURA-ARCH',
+  'Aura Bar Wall Bracket':  'AURA-BARMNT'
+};
+
+async function trackCardEvent(eventType, cardProductId, cardProductName) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/product_card_events_aura`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        card_product_id: cardProductId,
+        card_product_name: cardProductName,
+        event_type: eventType
+      })
+    });
+  } catch(e) { /* fail silently */ }
+}
+
+const params = new URLSearchParams(window.location.search);
+const productId = params.get('product') || '';
+
+const CONFIG = {
+  bot: "Aura",
+  webhook: "https://n8n.srv1208833.hstgr.cloud/webhook/squ-template-chat",
+  welcome: "Welcome to Aura. I can help you find the right product, set yours up, troubleshoot an issue, or answer anything about the brand. What can I help you with?",
+};
+
+const questionsPerLang = {
+  en: ["Help me choose", "Setup help", "Compare products", "Accessories", "Warranty"],
+  fr: ["Aidez-moi à choisir", "Installation", "Comparer les produits", "Accessoires", "Garantie"],
+  es: ["Ayúdame a elegir", "Instalación", "Comparar productos", "Accesorios", "Garantía"],
+  zh: ["幫我選擇", "安裝協助", "產品比較", "配件", "保固"],
+  ja: ["製品選び", "セットアップ", "製品比較", "アクセサリー", "保証"],
+  ko: ["제품 선택 도움", "설치 도움", "제품 비교", "액세서리", "보증"]
+};
+
+let chatId = 'aura_' + Math.random().toString(36).substr(2, 9);
+let currentLang = 'en';
+let isSending = false;
+
+/* ---------- Country detection ---------- */
+function detectCountryFromTimezone() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const locale = navigator.language || 'en-US';
+    const regionFromLocale = locale.split('-')[1] || '';
+    const tzCountry = {
+      'Asia/Hong_Kong': 'HK', 'Asia/Taipei': 'TW', 'Asia/Tokyo': 'JP',
+      'Asia/Seoul': 'KR', 'Asia/Singapore': 'SG', 'Asia/Shanghai': 'CN',
+      'Asia/Bangkok': 'TH', 'Asia/Jakarta': 'ID', 'Asia/Macau': 'MO',
+      'Europe/Paris': 'FR', 'Europe/London': 'GB', 'Europe/Berlin': 'DE',
+      'Europe/Madrid': 'ES', 'Europe/Rome': 'IT', 'Europe/Zurich': 'CH',
+      'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE',
+      'America/New_York': 'US', 'America/Chicago': 'US',
+      'America/Los_Angeles': 'US', 'America/Denver': 'US',
+      'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+      'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR',
+      'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU',
+      'Pacific/Auckland': 'NZ',
+    };
+    return tzCountry[tz] || regionFromLocale.toUpperCase() || 'FR';
+  } catch(e) {
+    return 'FR';
+  }
+}
+
+async function detectCountryFromIP() {
+  const providers = [
+    async () => {
+      const r = await fetch('https://api.country.is/', { cache: 'no-store' });
+      if (!r.ok) throw new Error('country.is failed');
+      const d = await r.json();
+      return d.country;
+    },
+    async () => {
+      const r = await fetch('https://ipapi.co/country/', { cache: 'no-store' });
+      if (!r.ok) throw new Error('ipapi.co failed');
+      const t = (await r.text()).trim();
+      if (!/^[A-Z]{2}$/.test(t)) throw new Error('bad country code');
+      return t;
+    },
+    async () => {
+      const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
+      if (!r.ok) throw new Error('cloudflare failed');
+      const t = await r.text();
+      const match = t.match(/loc=([A-Z]{2})/);
+      if (!match) throw new Error('no loc in trace');
+      return match[1];
+    }
+  ];
+  const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
+  for (const p of providers) {
+    try {
+      const country = await Promise.race([p(), timeout(2500)]);
+      if (country && /^[A-Z]{2}$/.test(country)) return country;
+    } catch(e) { /* try next */ }
+  }
+  return null;
+}
+
+function getCurrency(country) {
+  const map = {
+    'US': 'USD', 'CA': 'CAD', 'GB': 'GBP',
+    'FR': 'EUR', 'DE': 'EUR', 'ES': 'EUR', 'IT': 'EUR',
+    'NL': 'EUR', 'BE': 'EUR', 'CH': 'CHF',
+    'HK': 'HKD', 'MO': 'HKD', 'TW': 'TWD', 'JP': 'JPY', 'KR': 'KRW',
+    'SG': 'SGD', 'CN': 'CNY', 'TH': 'THB', 'ID': 'IDR',
+    'AU': 'AUD', 'NZ': 'NZD', 'MX': 'MXN', 'BR': 'BRL',
+  };
+  return map[country] || 'EUR';
+}
+
+let userCountry = detectCountryFromTimezone();
+let userCurrency = getCurrency(userCountry);
+
+(async () => {
+  const ipCountry = await detectCountryFromIP();
+  if (ipCountry) {
+    userCountry = ipCountry;
+    userCurrency = getCurrency(ipCountry);
+  }
+})();
+
+/* ---------- DOM refs ---------- */
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendWrapper = document.getElementById('send-wrapper');
+
+function triggerWave() {
+  sendWrapper.classList.remove('rippling');
+  void sendWrapper.offsetWidth;
+  sendWrapper.classList.add('rippling');
+  setTimeout(() => sendWrapper.classList.remove('rippling'), 800);
+}
+
+function parseMarkdown(text) {
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(/(?<!href=")(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(/^[\*\-] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  const lines = html.split('\n');
+  return lines.map(line => {
+    const t = line.trim();
+    if (!t) return '';
+    if (/^<(ul|ol|li|h[1-6])/.test(t)) return t;
+    return `<p>${t}</p>`;
+  }).filter(Boolean).join('\n');
+}
+
+function buildProductCard(card) {
+  const productMeta = {
+    'Aura Speaker Ultimate':  { subtitle: 'Flagship sound, full-body' },
+    'Aura Speaker Pro':       { subtitle: 'Signature sound, compact form' },
+    'Aura Go':                { subtitle: '360° portable stereo' },
+    'Aura Gen II':            { subtitle: 'Adaptive noise cancellation' },
+    'Aura Bar':               { subtitle: 'Dolby Atmos 5.1.2 soundbar' },
+    'Aura Cocoon':            { subtitle: 'Travel case for Aura Go' },
+    'Aura Stand':             { subtitle: 'Floor stand, sold as a pair' },
+    'Aura Wall Mount':        { subtitle: 'For Aura Speaker Pro' },
+    'Aura Charging Dock':     { subtitle: 'Wireless top-up for Gen II' },
+    'Aura Arch':              { subtitle: 'Vinyl & analog bridge' },
+    'Aura Bar Wall Bracket':  { subtitle: 'Mount under your TV' },
+  };
+  const matchKey = Object.keys(productMeta).find(k => card.name && card.name.includes(k));
+  const meta = matchKey ? productMeta[matchKey] : { subtitle: '' };
+
+  const cardProductId = productNameToId[card.name]
+    || Object.entries(productNameToId).find(([n]) => card.name && card.name.includes(n))?.[1]
+    || card.name;
+  trackCardEvent('impression', cardProductId, card.name);
+
+  const div = document.createElement('div');
+  div.className = 'product-card';
+
+  const initials = (card.name || 'AU').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || 'AU';
+
+  div.innerHTML = `
+    <div class="product-card-img">
+      ${card.image
+        ? `<img src="${card.image}" alt="${card.name}" onerror="this.outerHTML='<div class=\\'product-card-placeholder\\'>${initials}</div>';">`
+        : `<div class="product-card-placeholder">${initials}</div>`}
+    </div>
+    <div class="product-card-body">
+      <div class="product-card-name">${card.name}</div>
+      <div class="product-card-subtitle">${meta.subtitle}</div>
+      <div class="product-card-price-row">
+        <div class="product-card-price">${card.price || ''}</div>
+      </div>
+      ${card.url ? `<a href="${card.url}" target="_blank" rel="noopener" class="product-card-btn">Discover</a>` : ''}
+    </div>
+  `;
+  const buyBtn = div.querySelector('.product-card-btn');
+  if (buyBtn) {
+    buyBtn.addEventListener('click', () => {
+      trackCardEvent('click', cardProductId, card.name);
+    });
+  }
+  return div;
+}
+
+function addMsg(text, type, card = null) {
+  const wrapper = document.createElement('div');
+  wrapper.className = `message-wrapper ${type}`;
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (type === 'bot') {
+    const label = document.createElement('div');
+    label.className = 'bot-label';
+    label.textContent = 'Aura Concierge';
+    wrapper.appendChild(label);
+  }
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `message ${type}`;
+  if (type === 'bot') {
+    msgDiv.innerHTML = parseMarkdown(text);
+  } else {
+    msgDiv.textContent = text;
+  }
+  wrapper.appendChild(msgDiv);
+  if (card) wrapper.appendChild(buildProductCard(card));
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'message-time';
+  timeDiv.textContent = time;
+  wrapper.appendChild(timeDiv);
+  chat.appendChild(wrapper);
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom() {
+  requestAnimationFrame(() => {
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.id = 'typing';
+  div.className = 'message-wrapper bot';
+  const label = document.createElement('div');
+  label.className = 'bot-label';
+  label.textContent = 'Aura Concierge';
+  div.appendChild(label);
+  const msg = document.createElement('div');
+  msg.className = 'message bot';
+  msg.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  div.appendChild(msg);
+  chat.appendChild(div);
+  scrollChatToBottom();
+}
+
+async function handleSend(textOverride) {
+  const text = textOverride || input.value.trim();
+  if (!text || isSending) return;
+  input.value = '';
+  document.getElementById('quick-replies').style.display = 'none';
+  isSending = true;
+  input.disabled = true;
+  document.getElementById('send-btn').disabled = true;
+  triggerWave();
+  addMsg(text, 'user');
+  showTyping();
+  try {
+    const res = await fetch(CONFIG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        productId,
+        chatId,
+        language: currentLang,
+        country: userCountry,
+        currency: userCurrency
+      })
+    });
+    const data = await res.json();
+    if (document.getElementById('typing')) document.getElementById('typing').remove();
+    addMsg(
+      data.reply || "I'm having trouble connecting. Please try again.",
+      'bot',
+      data.product_card || null
+    );
+  } catch(e) {
+    if (document.getElementById('typing')) document.getElementById('typing').remove();
+    addMsg("Connection issue. Please check your network and try again.", 'bot');
+  } finally {
+    isSending = false;
+    input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    if (!('ontouchstart' in window) && window.innerWidth > 640) {
+      input.focus();
+    }
+  }
+}
+
+function init() {
+  chat.innerHTML = '';
+  addMsg(CONFIG.welcome, 'bot');
+  const qr = document.getElementById('quick-replies');
+  qr.innerHTML = '';
+  qr.style.display = 'flex';
+  const questions = questionsPerLang[currentLang] || questionsPerLang.en;
+  questions.forEach(q => {
+    const b = document.createElement('button');
+    b.className = 'qr-btn';
+    b.textContent = q;
+    b.onclick = () => handleSend(q);
+    qr.appendChild(b);
+  });
+}
+
+document.getElementById('send-btn').onclick = (e) => {
+  e.preventDefault();
+  handleSend();
+};
+input.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+document.getElementById('restart-btn').onclick = () => {
+  chatId = 'aura_' + Math.random().toString(36).substr(2, 9);
+  init();
+};
+
+const langBtn = document.getElementById('lang-btn');
+const langDropdown = document.getElementById('lang-dropdown');
+langBtn.onclick = (e) => {
+  e.stopPropagation();
+  langDropdown.classList.toggle('open');
+};
+document.addEventListener('click', () => {
+  langDropdown.classList.remove('open');
+});
+langDropdown.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+document.querySelectorAll('.lang-option').forEach(opt => {
+  opt.onclick = () => {
+    const lang = opt.dataset.lang;
+    const welcome = opt.dataset.welcome;
+    const placeholder = opt.dataset.placeholder;
+    currentLang = lang;
+    document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    CONFIG.welcome = welcome;
+    input.placeholder = placeholder;
+    langDropdown.classList.remove('open');
+    chatId = 'aura_' + Math.random().toString(36).substr(2, 9);
+    init();
+  };
+});
+
+window.addEventListener('resize', () => {
+  scrollChatToBottom();
+});
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', scrollChatToBottom);
+}
+
+chat.addEventListener('scroll', () => {
+  if (chat.scrollLeft !== 0) chat.scrollLeft = 0;
+});
+
+init();
+</script>
+</body>
+</html>
